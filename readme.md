@@ -19,7 +19,6 @@
 选择以下任一链接安装脚本：
 
 - [GreasyFork 安装地址](https://greasyfork.org/zh-CN/scripts/549366-b站直播摸鱼模式-偷偷看直播-上班摸鱼)
-- [OpenUserJS 安装地址](https://openuserjs.org/scripts/小派sama/B站直播摸鱼模式偷偷看直播上班摸鱼)
 
 ## 使用方法
 
