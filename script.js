@@ -11,7 +11,7 @@
 // @license      GPL-3.0-only
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     // 添加样式
@@ -402,7 +402,7 @@
     function updateCountdownDisplay() {
         const meowBtn = document.getElementById('stealth-meow-btn');
         if (!meowBtn) return;
-        
+
         const minutes = Math.floor(remainingTime / 60000);
         const seconds = Math.floor((remainingTime % 60000) / 1000);
         meowBtn.textContent = `喵(${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')})`;
@@ -413,9 +413,6 @@
         const input = document.getElementById('stealth-danmu-input');
         input.value = '喵';
         sendDanmu();
-        
-        // 设置下一次发送时间
-        scheduleNextMeow();
     }
 
     // 安排下一次发送
@@ -426,11 +423,15 @@
         
         // 清除现有定时器
         if (autoMeowInterval) {
-            clearInterval(autoMeowInterval);
+            clearTimeout(autoMeowInterval);
         }
         
         // 设置新定时器
-        autoMeowInterval = setTimeout(autoSendMeow, interval);
+        autoMeowInterval = setTimeout(() => {
+            autoSendMeow();
+            // 自动安排下一次发送
+            scheduleNextMeow();
+        }, interval);
         updateCountdownDisplay();
         
         // 启动倒计时
@@ -442,12 +443,13 @@
         if (meowCountdownInterval) {
             clearInterval(meowCountdownInterval);
         }
-        
+
         meowCountdownInterval = setInterval(() => {
             remainingTime = nextMeowTime - Date.now();
             if (remainingTime <= 0) {
                 remainingTime = 0;
                 clearInterval(meowCountdownInterval);
+                meowCountdownInterval = null;
             }
             updateCountdownDisplay();
         }, 1000);
@@ -459,15 +461,17 @@
             clearInterval(meowCountdownInterval);
             meowCountdownInterval = null;
         }
+        remainingTime = 0;
+        updateCountdownDisplay();
     }
 
     // 切换自动发送喵功能
     function toggleAutoMeow() {
         const meowBtn = document.getElementById('stealth-meow-btn');
-        
+
         if (autoMeowInterval) {
             // 如果已经有定时器，则关闭
-            clearInterval(autoMeowInterval);
+            clearTimeout(autoMeowInterval);
             autoMeowInterval = null;
             stopCountdown();
             meowBtn.classList.remove('active');
@@ -475,10 +479,9 @@
             console.log('已关闭自动发送喵功能');
         } else {
             // 如果没有定时器，则开启
-            scheduleNextMeow();
             meowBtn.classList.add('active');
             console.log('已开启自动发送喵功能，随机间隔13-17分钟');
-            
+
             // 立即发送一次
             autoSendMeow();
         }
@@ -573,7 +576,7 @@
         function startDrag(e) {
             // 如果是点击事件，不处理拖动
             if (e.type === 'mousedown' && e.button !== 0) return;
-            
+
             e.preventDefault();
             isDragging = true;
             btn.classList.add('dragging');
@@ -582,7 +585,7 @@
             const rect = btn.getBoundingClientRect();
             startRight = parseInt(btn.style.right) || -25;
             startBottom = parseInt(btn.style.bottom) || 100;
-            
+
             // 获取初始鼠标/触摸位置
             if (e.type === 'mousedown') {
                 startX = e.clientX;
@@ -615,7 +618,7 @@
             // 计算新位置
             const deltaX = clientX - startX;
             const deltaY = clientY - startY;
-            
+
             let newRight = startRight - deltaX;
             let newBottom = startBottom - deltaY;
 
@@ -625,7 +628,7 @@
             const btnWidth = btn.offsetWidth;
             const btnHeight = btn.offsetHeight;
 
-            newRight = Math.min(Math.max(newRight, -btnWidth/2), windowWidth - btnWidth/2);
+            newRight = Math.min(Math.max(newRight, -btnWidth / 2), windowWidth - btnWidth / 2);
             newBottom = Math.min(Math.max(newBottom, 0), windowHeight - btnHeight);
 
             // 应用新位置
@@ -651,8 +654,8 @@
             const btnWidth = btn.offsetWidth;
 
             // 如果靠近右侧边缘，则吸附到边缘
-            if (rect.right >= windowWidth - btnWidth/4) {
-                btn.style.right = `-${btnWidth/2}px`;
+            if (rect.right >= windowWidth - btnWidth / 4) {
+                btn.style.right = `-${btnWidth / 2}px`;
             }
 
             // 保存位置
@@ -661,7 +664,7 @@
     }
 
     // 点击控制按钮
-    btn.addEventListener('click', function(e) {
+    btn.addEventListener('click', function (e) {
         // 如果正在拖动，不处理点击
         if (btn.classList.contains('dragging')) {
             e.stopPropagation();
@@ -683,7 +686,7 @@
     });
 
     // 双击控制按钮进入隐身模式
-    btn.addEventListener('dblclick', function(e) {
+    btn.addEventListener('dblclick', function (e) {
         // 如果正在拖动，不处理双击
         if (btn.classList.contains('dragging')) {
             e.stopPropagation();
@@ -699,19 +702,19 @@
     });
 
     // 喵按钮点击事件
-    document.getElementById('stealth-meow-btn').addEventListener('click', function(e) {
+    document.getElementById('stealth-meow-btn').addEventListener('click', function (e) {
         e.stopPropagation();
         toggleAutoMeow();
     });
 
     // 表情按钮点击事件
-    document.getElementById('stealth-emoji-btn').addEventListener('click', function(e) {
+    document.getElementById('stealth-emoji-btn').addEventListener('click', function (e) {
         e.stopPropagation();
         toggleEmojiPanel();
     });
 
     // 表情按钮点击事件
-    emojiPanel.addEventListener('click', function(e) {
+    emojiPanel.addEventListener('click', function (e) {
         if (e.target.classList.contains('stealth-emoji-btn')) {
             const input = document.getElementById('stealth-danmu-input');
             input.value += e.target.dataset.text;
@@ -723,14 +726,14 @@
     document.getElementById('stealth-danmu-send').addEventListener('click', sendDanmu);
 
     // 输入框回车发送
-    document.getElementById('stealth-danmu-input').addEventListener('keypress', function(e) {
+    document.getElementById('stealth-danmu-input').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             sendDanmu();
         }
     });
 
     // 点击表情面板外部隐藏表情面板
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (emojiPanel.classList.contains('show') &&
             !emojiPanel.contains(e.target) &&
             e.target.id !== 'stealth-emoji-btn') {
