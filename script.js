@@ -310,6 +310,7 @@
     const RANDOM_RANGE = 2 * 60 * 1000; // ±2分钟随机范围
     let remainingTime = 0;
     let nextMeowTime = 0;
+    let lastMeowTime = 0; // 添加这行用于记录上次发送时间
 
     // B站常用表情文字代码
     const emojiList = [
@@ -413,6 +414,18 @@
         const input = document.getElementById('stealth-danmu-input');
         input.value = '喵';
         sendDanmu();
+        
+        // 记录发送日志
+        const now = Date.now();
+        if (lastMeowTime > 0) {
+            const interval = now - lastMeowTime;
+            const intervalMinutes = Math.floor(interval / 60000);
+            const intervalSeconds = Math.floor((interval % 60000) / 1000);
+            console.log(`[自动发送喵] ${new Date(now).toLocaleString()} - 距离上次发送间隔: ${intervalMinutes}分${intervalSeconds}秒`);
+        } else {
+            console.log(`[自动发送喵] ${new Date(now).toLocaleString()} - 首次发送`);
+        }
+        lastMeowTime = now;
     }
 
     // 安排下一次发送
@@ -484,6 +497,8 @@
 
             // 立即发送一次
             autoSendMeow();
+            // 安排下一次发送
+            scheduleNextMeow();
         }
     }
 
