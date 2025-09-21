@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         B站直播摸鱼模式|偷偷看直播|上班摸鱼
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.1.1
 // @description  隐身模式下伪装成AI聊天界面，支持拖动按钮和随机间隔自动发送
 // @author       小派sama
 // @match        https://live.bilibili.com/*
