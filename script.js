@@ -266,7 +266,24 @@
             z-index: 10000;
         }
 
-        #stealth-volume-control:hover {
+        #stealth-refresh-control {
+            position: absolute;
+            top: -40px;
+            right: 50px;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        #stealth-volume-control:hover,
+        #stealth-refresh-control:hover {
             background: #f7f7f7;
         }
 
@@ -274,7 +291,8 @@
             fill: #999;
         }
 
-        #stealth-volume-control svg {
+        #stealth-volume-control svg,
+        #stealth-refresh-control svg {
             width: 20px;
             height: 20px;
             fill: #333;
@@ -363,7 +381,12 @@
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path>
             </svg>
             <svg class="mute-icon" style="display:none" viewBox="0 0 24 24">
-                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"></path>
+                <path d="M16.5 12c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"></path>
+            </svg>
+        </div>
+        <div id="stealth-refresh-control">
+            <svg viewBox="0 0 24 24">
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></path>
             </svg>
         </div>
         <div id="stealth-volume-slider-container">
@@ -495,7 +518,7 @@
         const input = document.getElementById('stealth-danmu-input');
         input.value = '喵';
         sendDanmu();
-        
+
         // 记录发送日志
         const now = Date.now();
         if (lastMeowTime > 0) {
@@ -514,12 +537,12 @@
         const interval = getRandomInterval();
         nextMeowTime = Date.now() + interval;
         remainingTime = interval;
-        
+
         // 清除现有定时器
         if (autoMeowInterval) {
             clearTimeout(autoMeowInterval);
         }
-        
+
         // 设置新定时器
         autoMeowInterval = setTimeout(() => {
             autoSendMeow();
@@ -527,7 +550,7 @@
             scheduleNextMeow();
         }, interval);
         updateCountdownDisplay();
-        
+
         // 启动倒计时
         startCountdown();
     }
@@ -842,29 +865,36 @@
         // 延迟执行确保DOM元素已创建
         setTimeout(() => {
             const volumeControl = document.getElementById('stealth-volume-control');
+            const refreshControl = document.getElementById('stealth-refresh-control');
             const volumeSliderContainer = document.getElementById('stealth-volume-slider-container');
             const volumeSlider = document.getElementById('stealth-volume-slider');
-            
+
             if (!volumeControl || !volumeSliderContainer || !volumeSlider) {
                 console.log('音量控制元素未找到');
                 return;
             }
-            
+
             // 设置初始音量为10%
             volumeSlider.value = 10;
             setInitialVolume(10);
-            
+
             // 点击音量按钮切换静音状态
             volumeControl.addEventListener('click', function(e) {
                 e.stopPropagation();
                 toggleMute();
             });
-            
+
+            // 点击刷新按钮刷新直播
+            refreshControl.addEventListener('click', function(e) {
+                e.stopPropagation();
+                refreshLiveStream();
+            });
+
             // 鼠标悬停显示音量滑块
             volumeControl.addEventListener('mouseenter', function() {
                 volumeSliderContainer.classList.add('show');
             });
-            
+
             // 鼠标离开隐藏音量滑块
             volumeControl.addEventListener('mouseleave', function(e) {
                 // 检查鼠标是否移动到了滑块上
@@ -872,12 +902,12 @@
                     volumeSliderContainer.classList.remove('show');
                 }
             });
-            
+
             // 鼠标离开滑块时隐藏
             volumeSliderContainer.addEventListener('mouseleave', function() {
                 volumeSliderContainer.classList.remove('show');
             });
-            
+
             // 滚轮调节音量
             volumeControl.addEventListener('wheel', function(e) {
                 e.preventDefault();
@@ -887,14 +917,14 @@
                 volumeSlider.value = newVolume;
                 onVolumeChange(newVolume);
             });
-            
+
             // 滑块值改变事件
             volumeSlider.addEventListener('input', function() {
                 onVolumeChange(parseInt(this.value));
             });
         }, 0);
     }
-    
+
     // 设置初始音量
     function setInitialVolume(volume) {
         // 延迟执行确保页面加载完成
@@ -902,13 +932,13 @@
             onVolumeChange(volume);
         }, 1000);
     }
-    
+
     // 音量改变处理函数
     function onVolumeChange(volume) {
         // 查找B站原生的视频元素
         const videoElements = document.querySelectorAll('video');
         let mainVideo = null;
-        
+
         // 找到主视频（通常是第一个或有特定类名的视频元素）
         for (let video of videoElements) {
             // B站直播的主视频通常较大
@@ -917,17 +947,17 @@
                 break;
             }
         }
-        
+
         // 如果没找到符合尺寸的视频，就使用第一个视频元素
         if (!mainVideo && videoElements.length > 0) {
             mainVideo = videoElements[0];
         }
-        
+
         // 设置音量
         if (mainVideo) {
             mainVideo.volume = volume / 100;
         }
-        
+
         console.log(`音量已调整为: ${volume}%`);
     }
 
@@ -937,12 +967,12 @@
         const volumeSlider = document.getElementById('stealth-volume-slider');
         const volumeIcon = volumeControl.querySelector('.volume-icon');
         const muteIcon = volumeControl.querySelector('.mute-icon');
-        
+
         if (!volumeControl || !volumeSlider) return;
-        
+
         // 切换静音状态
         volumeControl.classList.toggle('muted');
-        
+
         if (volumeControl.classList.contains('muted')) {
             // 保存当前音量以便恢复
             volumeSlider.dataset.prevVolume = volumeSlider.value;
@@ -963,6 +993,145 @@
         }
     }
 
+    // 刷新直播流功能
+    function refreshLiveStream() {
+        console.log('尝试刷新直播流');
+
+        // 方法1: 查找B站直播页面可能存在的刷新按钮并点击
+        const possibleRefreshButtons = [
+            '.live-player-reload',
+            '.reload-btn',
+            '.refresh-btn',
+            '[class*="reload"]',
+            '[class*="refresh"]',
+            '.reload',
+            '.refresh',
+            '[title*="刷新"]',
+            '[title*="reload"]',
+            '[title*="refresh"]'
+        ];
+
+        for (const selector of possibleRefreshButtons) {
+            const button = document.querySelector(selector);
+            if (button) {
+                try {
+                    button.click();
+                    console.log(`通过点击页面按钮(${selector})刷新直播流`);
+                    return;
+                } catch (e) {
+                    console.log(`点击按钮(${selector})失败:`, e);
+                }
+            }
+        }
+
+        // 方法2: 尝试触发页面的重新加载机制
+        try {
+            // 查找播放器容器
+            const playerContainer = document.querySelector('.live-player-mounter') ||
+                                  document.querySelector('.bilibili-live-player') ||
+                                  document.querySelector('.web-player') ||
+                                  document.querySelector('.player-model-body');
+
+            if (playerContainer) {
+                // 查找容器内的视频元素
+                const video = playerContainer.querySelector('video');
+                if (video) {
+                    // 尝试重新加载视频
+                    const src = video.src;
+                    video.src = '';
+                    setTimeout(() => {
+                        video.src = src;
+                        video.play().catch(e => console.log('播放失败:', e));
+                    }, 100);
+                    console.log('通过重置video元素src属性刷新直播流');
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('重置video元素失败:', e);
+        }
+
+        // 方法3: 尝试使用B站播放器API
+        try {
+            // B站播放器对象可能存在于不同的全局变量中
+            const playerObjects = [
+                window.player,
+                window.livePlayer,
+                window.bilibiliPlayer,
+                document.querySelector('video')?.parentNode?.__vue__,
+                document.querySelector('.bilibili-live-player')?.__vue__
+            ];
+
+            for (const player of playerObjects) {
+                if (player) {
+                    // 尝试调用播放器的重载方法
+                    if (typeof player.reload === 'function') {
+                        player.reload();
+                        console.log('通过调用player.reload()刷新直播流');
+                        return;
+                    }
+
+                    if (typeof player.refresh === 'function') {
+                        player.refresh();
+                        console.log('通过调用player.refresh()刷新直播流');
+                        return;
+                    }
+
+                    // 尝试重新设置播放源
+                    if (player.hasOwnProperty('src')) {
+                        const src = player.src;
+                        player.src = '';
+                        setTimeout(() => {
+                            player.src = src;
+                        }, 100);
+                        console.log('通过重置player.src刷新直播流');
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.log('调用播放器API失败:', e);
+        }
+
+        // 方法4: 查找页面上的视频元素并尝试刷新
+        try {
+            const videoElements = document.querySelectorAll('video');
+            for (let video of videoElements) {
+                // 检查是否是直播视频（通常较大）
+                if (video.offsetWidth > 300 && video.offsetHeight > 200) {
+                    // 尝试重新加载
+                    video.load();
+                    video.play().catch(e => console.log('播放失败:', e));
+                    console.log('通过重新加载video元素刷新直播流');
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('重新加载视频元素失败:', e);
+        }
+
+        // 方法5: 模拟F5刷新（仅刷新视频部分）
+        try {
+            // 查找播放器相关的Vue组件并尝试触发更新
+            const playerElement = document.querySelector('.live-player-mounter') ||
+                                 document.querySelector('.bilibili-live-player') ||
+                                 document.querySelector('.web-player');
+
+            if (playerElement && playerElement.__vue__) {
+                // 如果是Vue组件，尝试强制更新
+                if (typeof playerElement.__vue__.$forceUpdate === 'function') {
+                    playerElement.__vue__.$forceUpdate();
+                    console.log('通过Vue组件强制更新刷新直播流');
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('Vue组件更新失败:', e);
+        }
+
+        console.log('所有刷新方法都失败了，请提供更多页面信息');
+    }
+
     // 确保元素在最上层
     setInterval(() => {
         btn.style.zIndex = '10000';
@@ -976,7 +1145,7 @@
 
     // 设置拖动功能
     setupDrag();
-    
+
     // 设置音量控制
     setupVolumeControl();
 
