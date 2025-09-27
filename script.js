@@ -270,10 +270,19 @@
             background: #f7f7f7;
         }
 
+        #stealth-volume-control.muted svg {
+            fill: #999;
+        }
+
         #stealth-volume-control svg {
             width: 20px;
             height: 20px;
             fill: #333;
+        }
+
+        /* 静音状态下的音量条样式 */
+        #stealth-volume-slider-container.muted #stealth-volume-slider {
+            opacity: 0.5;
         }
 
         /* 音量滑块容器 */
@@ -350,8 +359,11 @@
     danmuPanel.id = 'stealth-danmu-panel';
     danmuPanel.innerHTML = `
         <div id="stealth-volume-control">
-            <svg viewBox="0 0 24 24">
+            <svg class="volume-icon" viewBox="0 0 24 24">
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path>
+            </svg>
+            <svg class="mute-icon" style="display:none" viewBox="0 0 24 24">
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"></path>
             </svg>
         </div>
         <div id="stealth-volume-slider-container">
@@ -827,46 +839,60 @@
 
     // 音量控制功能
     function setupVolumeControl() {
-        const volumeControl = document.getElementById('stealth-volume-control');
-        const volumeSliderContainer = document.getElementById('stealth-volume-slider-container');
-        const volumeSlider = document.getElementById('stealth-volume-slider');
-        
-        // 设置初始音量为10%
-        volumeSlider.value = 10;
-        setInitialVolume(10);
-        
-        // 鼠标悬停显示音量滑块
-        volumeControl.addEventListener('mouseenter', function() {
-            volumeSliderContainer.classList.add('show');
-        });
-        
-        // 鼠标离开隐藏音量滑块
-        volumeControl.addEventListener('mouseleave', function(e) {
-            // 检查鼠标是否移动到了滑块上
-            if (!volumeSliderContainer.contains(e.relatedTarget) && e.relatedTarget !== volumeSlider) {
-                volumeSliderContainer.classList.remove('show');
+        // 延迟执行确保DOM元素已创建
+        setTimeout(() => {
+            const volumeControl = document.getElementById('stealth-volume-control');
+            const volumeSliderContainer = document.getElementById('stealth-volume-slider-container');
+            const volumeSlider = document.getElementById('stealth-volume-slider');
+            
+            if (!volumeControl || !volumeSliderContainer || !volumeSlider) {
+                console.log('音量控制元素未找到');
+                return;
             }
-        });
-        
-        // 鼠标离开滑块时隐藏
-        volumeSliderContainer.addEventListener('mouseleave', function() {
-            volumeSliderContainer.classList.remove('show');
-        });
-        
-        // 滚轮调节音量
-        volumeControl.addEventListener('wheel', function(e) {
-            e.preventDefault();
-            const currentVolume = parseInt(volumeSlider.value);
-            const delta = e.deltaY > 0 ? -5 : 5;
-            const newVolume = Math.max(0, Math.min(100, currentVolume + delta));
-            volumeSlider.value = newVolume;
-            onVolumeChange(newVolume);
-        });
-        
-        // 滑块值改变事件
-        volumeSlider.addEventListener('input', function() {
-            onVolumeChange(parseInt(this.value));
-        });
+            
+            // 设置初始音量为10%
+            volumeSlider.value = 10;
+            setInitialVolume(10);
+            
+            // 点击音量按钮切换静音状态
+            volumeControl.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleMute();
+            });
+            
+            // 鼠标悬停显示音量滑块
+            volumeControl.addEventListener('mouseenter', function() {
+                volumeSliderContainer.classList.add('show');
+            });
+            
+            // 鼠标离开隐藏音量滑块
+            volumeControl.addEventListener('mouseleave', function(e) {
+                // 检查鼠标是否移动到了滑块上
+                if (!volumeSliderContainer.contains(e.relatedTarget) && e.relatedTarget !== volumeSlider) {
+                    volumeSliderContainer.classList.remove('show');
+                }
+            });
+            
+            // 鼠标离开滑块时隐藏
+            volumeSliderContainer.addEventListener('mouseleave', function() {
+                volumeSliderContainer.classList.remove('show');
+            });
+            
+            // 滚轮调节音量
+            volumeControl.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                const currentVolume = parseInt(volumeSlider.value);
+                const delta = e.deltaY > 0 ? -5 : 5;
+                const newVolume = Math.max(0, Math.min(100, currentVolume + delta));
+                volumeSlider.value = newVolume;
+                onVolumeChange(newVolume);
+            });
+            
+            // 滑块值改变事件
+            volumeSlider.addEventListener('input', function() {
+                onVolumeChange(parseInt(this.value));
+            });
+        }, 0);
     }
     
     // 设置初始音量
@@ -903,6 +929,38 @@
         }
         
         console.log(`音量已调整为: ${volume}%`);
+    }
+
+    // 静音切换功能
+    function toggleMute() {
+        const volumeControl = document.getElementById('stealth-volume-control');
+        const volumeSlider = document.getElementById('stealth-volume-slider');
+        const volumeIcon = volumeControl.querySelector('.volume-icon');
+        const muteIcon = volumeControl.querySelector('.mute-icon');
+        
+        if (!volumeControl || !volumeSlider) return;
+        
+        // 切换静音状态
+        volumeControl.classList.toggle('muted');
+        
+        if (volumeControl.classList.contains('muted')) {
+            // 保存当前音量以便恢复
+            volumeSlider.dataset.prevVolume = volumeSlider.value;
+            // 设置音量为0
+            volumeSlider.value = 0;
+            onVolumeChange(0);
+            // 切换图标显示
+            volumeIcon.style.display = 'none';
+            muteIcon.style.display = 'block';
+        } else {
+            // 恢复之前的音量
+            const prevVolume = volumeSlider.dataset.prevVolume || 10;
+            volumeSlider.value = prevVolume;
+            onVolumeChange(parseInt(prevVolume));
+            // 切换图标显示
+            volumeIcon.style.display = 'block';
+            muteIcon.style.display = 'none';
+        }
     }
 
     // 确保元素在最上层
