@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         B站直播摸鱼模式|偷偷看直播|上班摸鱼
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.2
 // @description  隐身模式下伪装成AI聊天界面，支持拖动按钮和随机间隔自动发送
 // @author       小派sama
 // @match        https://live.bilibili.com/*
@@ -248,6 +248,67 @@
         #stealth-meow-btn.active {
             background: #FB7299 !important;
         }
+
+        /* 音量控制按钮 */
+        #stealth-volume-control {
+            position: absolute;
+            top: -40px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        #stealth-volume-control:hover {
+            background: #f7f7f7;
+        }
+
+        #stealth-volume-control svg {
+            width: 20px;
+            height: 20px;
+            fill: #333;
+        }
+
+        /* 音量滑块容器 */
+        #stealth-volume-slider-container {
+            position: absolute;
+            bottom: 150px;
+            right: 0px;
+            width: 36px;
+            height: 100px;
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            padding: 10px 5px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10001;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        #stealth-volume-slider-container.show {
+            display: flex;
+        }
+
+        /* 音量滑块 */
+        #stealth-volume-slider {
+            -webkit-appearance: slider-vertical;
+            width: 20px;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        #stealth-volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: slider-vertical;
+        }
     `);
 
     // 创建控制按钮
@@ -288,6 +349,14 @@
     const danmuPanel = document.createElement('div');
     danmuPanel.id = 'stealth-danmu-panel';
     danmuPanel.innerHTML = `
+        <div id="stealth-volume-control">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path>
+            </svg>
+        </div>
+        <div id="stealth-volume-slider-container">
+            <input type="range" id="stealth-volume-slider" min="0" max="100" value="100" orient="vertical">
+        </div>
         <input type="text" id="stealth-danmu-input" placeholder="输入您的问题...">
         <div class="stealth-btn-container">
             <button id="stealth-meow-btn">喵</button>
@@ -756,6 +825,86 @@
         }
     });
 
+    // 音量控制功能
+    function setupVolumeControl() {
+        const volumeControl = document.getElementById('stealth-volume-control');
+        const volumeSliderContainer = document.getElementById('stealth-volume-slider-container');
+        const volumeSlider = document.getElementById('stealth-volume-slider');
+        
+        // 设置初始音量为10%
+        volumeSlider.value = 10;
+        setInitialVolume(10);
+        
+        // 鼠标悬停显示音量滑块
+        volumeControl.addEventListener('mouseenter', function() {
+            volumeSliderContainer.classList.add('show');
+        });
+        
+        // 鼠标离开隐藏音量滑块
+        volumeControl.addEventListener('mouseleave', function(e) {
+            // 检查鼠标是否移动到了滑块上
+            if (!volumeSliderContainer.contains(e.relatedTarget) && e.relatedTarget !== volumeSlider) {
+                volumeSliderContainer.classList.remove('show');
+            }
+        });
+        
+        // 鼠标离开滑块时隐藏
+        volumeSliderContainer.addEventListener('mouseleave', function() {
+            volumeSliderContainer.classList.remove('show');
+        });
+        
+        // 滚轮调节音量
+        volumeControl.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const currentVolume = parseInt(volumeSlider.value);
+            const delta = e.deltaY > 0 ? -5 : 5;
+            const newVolume = Math.max(0, Math.min(100, currentVolume + delta));
+            volumeSlider.value = newVolume;
+            onVolumeChange(newVolume);
+        });
+        
+        // 滑块值改变事件
+        volumeSlider.addEventListener('input', function() {
+            onVolumeChange(parseInt(this.value));
+        });
+    }
+    
+    // 设置初始音量
+    function setInitialVolume(volume) {
+        // 延迟执行确保页面加载完成
+        setTimeout(() => {
+            onVolumeChange(volume);
+        }, 1000);
+    }
+    
+    // 音量改变处理函数
+    function onVolumeChange(volume) {
+        // 查找B站原生的视频元素
+        const videoElements = document.querySelectorAll('video');
+        let mainVideo = null;
+        
+        // 找到主视频（通常是第一个或有特定类名的视频元素）
+        for (let video of videoElements) {
+            // B站直播的主视频通常较大
+            if (video.offsetWidth > 300 && video.offsetHeight > 200) {
+                mainVideo = video;
+                break;
+            }
+        }
+        
+        // 如果没找到符合尺寸的视频，就使用第一个视频元素
+        if (!mainVideo && videoElements.length > 0) {
+            mainVideo = videoElements[0];
+        }
+        
+        // 设置音量
+        if (mainVideo) {
+            mainVideo.volume = volume / 100;
+        }
+        
+        console.log(`音量已调整为: ${volume}%`);
+    }
+
     // 确保元素在最上层
     setInterval(() => {
         btn.style.zIndex = '10000';
@@ -769,6 +918,9 @@
 
     // 设置拖动功能
     setupDrag();
+    
+    // 设置音量控制
+    setupVolumeControl();
 
     // 初始渲染表情
     renderEmojis();
