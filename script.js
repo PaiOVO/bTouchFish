@@ -264,6 +264,8 @@
             justify-content: center;
             cursor: pointer;
             z-index: 10000;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         #stealth-refresh-control {
@@ -319,10 +321,32 @@
             align-items: center;
             z-index: 10001;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         #stealth-volume-slider-container.show {
             display: flex;
+        }
+
+        /* 音量百分比显示 */
+        #stealth-volume-percent {
+            font-size: 12px;
+            color: #fff;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            min-width: 30px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         /* 音量滑块 */
@@ -390,7 +414,8 @@
             </svg>
         </div>
         <div id="stealth-volume-slider-container">
-            <input type="range" id="stealth-volume-slider" min="0" max="100" value="100" orient="vertical">
+            <div id="stealth-volume-percent">10%</div>
+            <input type="range" id="stealth-volume-slider" min="0" max="100" value="10" orient="vertical">
         </div>
         <input type="text" id="stealth-danmu-input" placeholder="输入您的问题...">
         <div class="stealth-btn-container">
@@ -868,14 +893,16 @@
             const refreshControl = document.getElementById('stealth-refresh-control');
             const volumeSliderContainer = document.getElementById('stealth-volume-slider-container');
             const volumeSlider = document.getElementById('stealth-volume-slider');
+            const volumePercent = document.getElementById('stealth-volume-percent');
 
-            if (!volumeControl || !volumeSliderContainer || !volumeSlider) {
+            if (!volumeControl || !volumeSliderContainer || !volumeSlider || !volumePercent) {
                 console.log('音量控制元素未找到');
                 return;
             }
 
             // 设置初始音量为10%
             volumeSlider.value = 10;
+            volumePercent.textContent = '10%';
             setInitialVolume(10);
 
             // 点击音量按钮切换静音状态
@@ -915,12 +942,15 @@
                 const delta = e.deltaY > 0 ? -5 : 5;
                 const newVolume = Math.max(0, Math.min(100, currentVolume + delta));
                 volumeSlider.value = newVolume;
+                volumePercent.textContent = newVolume + '%';
                 onVolumeChange(newVolume);
             });
 
             // 滑块值改变事件
             volumeSlider.addEventListener('input', function() {
-                onVolumeChange(parseInt(this.value));
+                const volume = parseInt(this.value);
+                volumePercent.textContent = volume + '%';
+                onVolumeChange(volume);
             });
         }, 0);
     }
