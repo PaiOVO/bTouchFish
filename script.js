@@ -9,6 +9,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @license      GPL-3.0-only
+// @downloadURL https://update.greasyfork.org/scripts/549366/B%E7%AB%99%E7%9B%B4%E6%92%AD%E6%91%B8%E9%B1%BC%E6%A8%A1%E5%BC%8F%7C%E5%81%B7%E5%81%B7%E7%9C%8B%E7%9B%B4%E6%92%AD%7C%E4%B8%8A%E7%8F%AD%E6%91%B8%E9%B1%BC.user.js
+// @updateURL https://update.greasyfork.org/scripts/549366/B%E7%AB%99%E7%9B%B4%E6%92%AD%E6%91%B8%E9%B1%BC%E6%A8%A1%E5%BC%8F%7C%E5%81%B7%E5%81%B7%E7%9C%8B%E7%9B%B4%E6%92%AD%7C%E4%B8%8A%E7%8F%AD%E6%91%B8%E9%B1%BC.meta.js
 // ==/UserScript==
 
 (function () {
@@ -440,6 +442,9 @@
     let remainingTime = 0;
     let nextMeowTime = 0;
     let lastMeowTime = 0; // 添加这行用于记录上次发送时间
+    // 消息历史相关变量
+    let messageHistory = []; // 存储消息历史
+    let historyIndex = -1;   // 当前浏览的历史记录索引
 
     // B站常用表情文字代码
     const emojiList = [
@@ -488,6 +493,17 @@
     function sendDanmu() {
         const text = document.getElementById('stealth-danmu-input').value.trim();
         if (!text) return;
+
+        // 将发送的消息添加到历史记录中
+        if (messageHistory.length === 0 || messageHistory[messageHistory.length - 1] !== text) {
+            messageHistory.push(text);
+            // 限制历史记录数量，只保留最近的50条
+            if (messageHistory.length > 50) {
+                messageHistory.shift();
+            }
+        }
+        // 重置历史记录索引
+        historyIndex = messageHistory.length;
 
         const { input, sendBtn } = findOriginalDanmuElements();
 
@@ -873,6 +889,64 @@
     document.getElementById('stealth-danmu-input').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             sendDanmu();
+        }
+    });
+
+    // 输入框上下键导航历史消息
+    document.getElementById('stealth-danmu-input').addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            
+            // 如果历史记录为空，直接返回
+            if (messageHistory.length === 0) return;
+            
+            // 如果当前是第一次按下向上键，初始化索引
+            if (historyIndex === messageHistory.length) {
+                // 保存当前正在输入的内容（如果有）
+                const currentInput = this.value;
+                if (currentInput && (messageHistory.length === 0 || messageHistory[messageHistory.length - 1] !== currentInput)) {
+                    // 临时保存当前输入，但不加入正式历史记录
+                    this.setAttribute('data-temp-input', currentInput);
+                }
+            }
+            
+            // 更新索引
+            if (historyIndex > 0) {
+                historyIndex--;
+                this.value = messageHistory[historyIndex];
+            } else if (this.hasAttribute('data-temp-input')) {
+                // 如果有临时保存的输入内容，显示它
+                this.value = this.getAttribute('data-temp-input');
+                this.removeAttribute('data-temp-input');
+                historyIndex = messageHistory.length;
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            
+            // 如果历史记录为空，或者已经是最新的记录，清空输入框
+            if (messageHistory.length === 0 || historyIndex >= messageHistory.length) {
+                this.value = this.getAttribute('data-temp-input') || '';
+                this.removeAttribute('data-temp-input');
+                historyIndex = messageHistory.length;
+                return;
+            }
+            
+            // 更新索引
+            historyIndex++;
+            if (historyIndex < messageHistory.length) {
+                this.value = messageHistory[historyIndex];
+            } else {
+                // 回到最新状态
+                this.value = this.getAttribute('data-temp-input') || '';
+                this.removeAttribute('data-temp-input');
+            }
+        } else if (e.key !== 'Enter') {
+            // 如果按了其他键（除了回车），清除临时输入内容
+            this.removeAttribute('data-temp-input');
+            // 如果当前不是在浏览历史记录，更新索引为最新
+            if (historyIndex !== messageHistory.length - 1) {
+                historyIndex = messageHistory.length;
+            }
         }
     });
 
